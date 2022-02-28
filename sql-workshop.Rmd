@@ -13,8 +13,8 @@ library(DBI)
 library(RMySQL)
 
 db_user <- 'admin'
-db_password <- 'testsql!'
-db_name <- 'oudb'
+db_password <- 'sql030122'
+db_name <- 'testdb'
 db_host <- 'sqltest.clh43re5lq5h.us-east-1.rds.amazonaws.com'
 db_port <- 3306
 
@@ -65,7 +65,7 @@ dbGetQuery(mydb, "SELECT * FROM studentInfo ORDER BY id_student LIMIT 10;")
 
 dbGetQuery(mydb, "SELECT id_student, gender FROM studentInfo ORDER BY id_student DESC LIMIT 10;") #Order listed will be reflected in order in table
 
-dbGetQuery(mydb, "SELECT id_student AS 'Student ID', gender FROM studentInfo LIMIT 10;") #SQL Standard says quotes for literal strings and double quotes for everything else but that conflicts with R
+dbGetQuery(mydb, "SELECT id_student AS 'Student ID', gender FROM studentInfo LIMIT 10;") #SQL Standard single quotes for literal strings and double quotes for everything else but that conflicts with R
 
 #Count the number of rows
 dbGetQuery(mydb, "SELECT COUNT(*) FROM studentAssessment;")
@@ -143,9 +143,21 @@ dbGetQuery(mydb, "INSERT INTO test VALUES ( 9, 'Frank' );")
 dbGetQuery(mydb, "SELECT * FROM test;")
 
 #Inserting a NULL row
-dbGetQuery(mydb, "INSERT INTO test DEFAULT VALUES;")
+#dbGetQuery(mydb, "INSERT INTO test DEFAULT VALUES;")
 
 dbGetQuery(mydb,"INSERT INTO test (score, student) SELECT score, id_student FROM studentAssessment;")
+
+dbGetQuery(mydb, "SELECT * FROM test;")
+
+# NULL Value
+
+#NULL is a state (similar to R), represents the lack of a value. But is not compatible with R backend so this code doesn't work as part of dbGetQuery()
+
+#This doesn't work because NULL is not a value
+SELECT * FROM test WHERE score = NULL;
+
+#Instead use
+dbGetQuery(mydb, "SELECT * FROM test WHERE score is NULL;")
 
 #Delete a table
 dbGetQuery(mydb, "DROP TABLE test;")
@@ -160,18 +172,6 @@ dbGetQuery(mydb, "DROP TABLE IF EXISTS test;")
 
 ```
 
-# NULL Value
-```{r}
-#NULL is a state (similar to R), represents the lack of a value. But is not compatible with R backend so this code doesn't work as part of dbGetQuery()
-
-#This doesn't work because NULL is not a value
-SELECT * FROM test WHERE score = NULL;
-
-#Instead use
-SELECT * FROM test WHERE score is NULL;
-
-```
-
 # Constraints
 ```{r}
 #Create table where student column *cannot* be NULL
@@ -181,6 +181,8 @@ dbGetQuery(mydb,"CREATE TABLE test2 (
   );")
 
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
+
+#Create table where score column defaults to zero
 
 dbGetQuery(mydb,"CREATE TABLE test2 (
    score INTEGER DEFAULT 0, 
@@ -194,6 +196,8 @@ dbGetQuery(mydb, "SELECT * FROM test2;")
 
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
 
+
+# Create a table where column must have unique value
 dbGetQuery(mydb,"CREATE TABLE test2 (
   score INTEGER UNIQUE, 
   student TEXT
@@ -209,7 +213,7 @@ dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (NULL, 'A');")
 dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (NULL, 'A');")
 
 #EXERCISE 5
-#Recreate one of your toy data tables with the constraint that for one of the integer variablesthe default value will be zero. Test your table by inserting some empty values. Display your new tables. Then delete your table.  
+#Recreate one of your toy data tables with the constraint that for one of the integer variables the default value will be zero. Test your table by inserting some empty values. Display your new tables. Then delete your table.  
 
 ```
 
@@ -231,18 +235,18 @@ dbGetQuery(mydb, "ALTER TABLE studentAssessment DROP COLUMN email;")
 
 # ID Columns
 ```{r}
-dbGetQuery(mydb,"CREATE TABLE test2 (
+dbGetQuery(mydb,"CREATE TABLE test3 (
   id INTEGER AUTO_INCREMENT PRIMARY KEY, #Not standard syntax
   score INTEGER, 
   student TEXT
   );")
 
-dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (1, 'A');")
-dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (5, 'B');")
+dbGetQuery(mydb,"INSERT INTO test3 (score, student) VALUES (1, 'A');")
+dbGetQuery(mydb,"INSERT INTO test3 (score, student) VALUES (5, 'B');")
 
-dbGetQuery(mydb, "SELECT * FROM test2;")
+dbGetQuery(mydb, "SELECT * FROM test3;")
 
-dbGetQuery(mydb, "DROP TABLE IF EXISTS test2;")
+dbGetQuery(mydb, "DROP TABLE IF EXISTS test3;")
 
 #EXERCISE 7
 #Create a new table with four variables and a primary key that is a sequential id value.
@@ -259,7 +263,11 @@ dbGetQuery(mydb, "SELECT id_student, date_submitted FROM studentAssessment WHERE
 #AND Statement
 dbGetQuery(mydb, "SELECT id_student, date_submitted FROM studentAssessment WHERE date_submitted > 550 AND id_student = 325750 ORDER BY date_submitted DESC;")
 
-#LIKE
+#LIKE - Character string matches a pattern
+# %aaa% - Finds any values that have "aaa" in any position
+# aaa% - Finds any values that start with "aaa"
+# _aaa% - Finds any values that have aaa in the second, third, fourth positions
+
 dbGetQuery(mydb, "SELECT id_student, gender, region FROM studentInfo WHERE region LIKE '%Region%';")
 
 #Begin with 'Region'
@@ -311,11 +319,11 @@ dbGetQuery(mydb,"SELECT
 ```{r}
 
 #This will take a while because of the architecture we are using
-dbGetQuery(mydb,"SELECT id_student, gender, region, date_registration
-          FROM studentInfo
-          JOIN studentRegistration
-          ON studentInfo.id_student = studentRegistration.id_student
-          ;")
+#dbGetQuery(mydb,"SELECT id_student, gender, region, date_registration
+          #FROM studentInfo
+          #JOIN studentRegistration
+          #ON studentInfo.id_student = studentRegistration.id_student
+          #;")
 
 dbGetQuery(mydb, "CREATE TABLE left_table (id INTEGER, description TEXT);")
 dbGetQuery(mydb, "CREATE TABLE right_table (id INTEGER, description TEXT);")
@@ -343,14 +351,17 @@ dbGetQuery(mydb, "INSERT INTO right_table VALUES ( 14, 'left 14');")
 dbGetQuery(mydb, "SELECT * FROM left_table;")
 dbGetQuery(mydb, "SELECT * FROM right_table;")
 
+#Everything that matches between tables
 dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
            FROM left_table AS l 
            JOIN right_table AS r ON l.id = r.id")
 
+#Evereything from right, matches from left
 dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
            FROM left_table AS l 
            RIGHT JOIN right_table AS r ON l.id = r.id")
 
+#Evereything from left, matches from right
 dbGetQuery(mydb,"SELECT l.description AS left_table, r.description AS right_table 
            FROM left_table AS l 
            LEFT JOIN right_table AS r ON l.id = r.id")
@@ -364,5 +375,10 @@ dbGetQuery(mydb, "SELECT * FROM left_table
 #EXERCISE 10
 # Create an a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
 
+```
+
+# Disconnect your database
+```{r}
+dbDisconnect(mydb)
 ```
 
