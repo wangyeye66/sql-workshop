@@ -7,13 +7,14 @@ output: html_document
 
 ## Connect to AMW MySQL Database
 ```{r}
-#install.packages("DBI", "RMySQL")
+install.packages("DBI")
+install.packages("RMySQL")
 
 library(DBI)
 library(RMySQL)
 
 db_user <- 'admin'
-db_password <- 'sql030122'
+db_password <- 'sql022723'
 db_name <- 'testdb'
 db_host <- 'sqltest.clh43re5lq5h.us-east-1.rds.amazonaws.com'
 db_port <- 3306
@@ -153,10 +154,10 @@ dbGetQuery(mydb, "SELECT * FROM test;")
 
 #NULL is a state (similar to R), represents the lack of a value. But is not compatible with R backend so this code doesn't work as part of dbGetQuery()
 
-#This doesn't work because NULL is not a value
+#This doesn't work because NULL is not a value (it cannot be "equal" to anything as it is ignored)
 SELECT * FROM test WHERE score = NULL;
 
-#Instead use
+#Instead use "is"
 dbGetQuery(mydb, "SELECT * FROM test WHERE score is NULL;")
 
 #Delete a table
@@ -376,6 +377,15 @@ dbGetQuery(mydb, "SELECT * FROM left_table
 # Create an a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
 
 ```
+# ChatGPT Version
+```{r}
+#Write the SQL code to create two tables called left and right with seven rows of data in two columns, id which is an integer and description which is text. They should have some overlapping values in them. Then right the code to join all the matching rows between the two tables
+
+#EXERCISE 11
+# Ask CHatGPT to write some SQL code and then try to run it on your DB
+```
+
+
 
 # Disconnect your database
 ```{r}
