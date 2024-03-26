@@ -1,7 +1,7 @@
 ---
 title: "sql-workshop"
-author: "Charles Lang"
-date: "10/16/2019"
+author: "Han Wang"
+date: "03/26/2024"
 output: html_document
 ---
 
@@ -14,9 +14,9 @@ library(DBI)
 library(RMySQL)
 
 db_user <- 'admin'
-db_password <- 'sql022723'
+db_password <- 'sql032624'
 db_name <- 'testdb'
-db_host <- 'sqltest.clh43re5lq5h.us-east-1.rds.amazonaws.com'
+db_host <- 'sqltest.ct5uulgrqvyh.us-east-2.rds.amazonaws.com'
 db_port <- 3306
 
 mydb <- dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, host = db_host, port = db_port)
@@ -55,6 +55,8 @@ dbReadTable(mydb, 'studentInfo')
 #EXERCISE 1
 #Make two toy data sets with at least three variables and at least 30 rows each in them. Have a mix of numeric and character variables. Transfer these dataframes to your SQL database using the DBI commands. Name the tables whatever you like.
 
+
+
 ```
 
 ## Getting into SQL - READING
@@ -82,9 +84,10 @@ dbGetQuery(mydb, "SELECT COUNT(*) FROM studentAssessment WHERE score > 50 AND id
 
 #EXERCISE 2
 #Read one of your toy data tables, make sure the output is ordered in descending order, you rename one of the variables and the output is limited to the first 20 rows.
+dbGetQuery(mydb,"select code_module as module, code_presentation as presentation, id_student from studentInfo order by id_student desc limit 20;")
 
 #Read the other table according to a condition of one of the variables.
-
+dbGetQuery(mydb,"select * from studentAssessment where id_assessment = 1752 limit 10;")
 ```
 
 ## Getting into SQL - UPDATING
@@ -122,7 +125,11 @@ dbGetQuery(mydb, "SELECT * FROM studentAssessment ORDER BY id_student LIMIT 10;"
 
 #EXERCISE 3
 #Insert a new row in one of your toy data tables leaving one variable empty. Change one value in your other table. Display your new tables. Delete the row you edited and the row you inserted. 
-
+dbGetQuery(mydb, "insert into studentAssessment (id_assessment, id_student, date_submitted) VALUES ('99999', '666', '20');")
+dbGetQuery(mydb, "SELECT * FROM studentAssessment where id_student=666;")
+dbGetQuery(mydb, "UPDATE studentAssessment SET score = '100' WHERE id_student = 666;")
+dbGetQuery(mydb, "SELECT * FROM studentAssessment where id_student=666;")
+dbGetQuery(mydb, "DELETE FROM studentAssessment WHERE id_student = 666;")
 
 ```
 
@@ -170,6 +177,7 @@ dbGetQuery(mydb, "DROP TABLE IF EXISTS test;")
 
 #EXERCISE 4
 #Create a table that is exactly the same as your first toy data table but this time use SQL commands. Display your new table. Then delete the original table. 
+
 
 ```
 
