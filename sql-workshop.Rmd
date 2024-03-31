@@ -55,8 +55,33 @@ dbReadTable(mydb, 'studentInfo')
 #EXERCISE 1
 #Make two toy data sets with at least three variables and at least 30 rows each in them. Have a mix of numeric and character variables. Transfer these dataframes to your SQL database using the DBI commands. Name the tables whatever you like.
 
+# Load necessary library
+library(tibble)
 
+# Data Set 1: Employee Details
+set.seed(0) # For reproducibility
+EmployeeDetails <- tibble(
+  EmployeeID = 1:30,
+  Department = sample(c("HR", "IT", "Finance", "Sales"), 30, replace = TRUE),
+  Salary = sample(30000:100000, 30, replace = TRUE)
+)
 
+# Data Set 2: Product Sales
+ProductSales <- tibble(
+  ProductID = 1:30,
+  ProductName = paste("Product", 1:30),
+  UnitsSold = sample(1:500, 30, replace = TRUE)
+)
+
+# Create Tables
+dbWriteTable(mydb, "employeeDetails", EmployeeDetails)
+dbWriteTable(mydb, "productSales", ProductSales)
+
+# List of Tables
+dbListTables(mydb)
+
+# Show table
+dbReadTable(mydb, "productSales")
 ```
 
 ## Getting into SQL - READING
@@ -84,10 +109,10 @@ dbGetQuery(mydb, "SELECT COUNT(*) FROM studentAssessment WHERE score > 50 AND id
 
 #EXERCISE 2
 #Read one of your toy data tables, make sure the output is ordered in descending order, you rename one of the variables and the output is limited to the first 20 rows.
-dbGetQuery(mydb,"select code_module as module, code_presentation as presentation, id_student from studentInfo order by id_student desc limit 20;")
+dbGetQuery(mydb,"select ProductID as ID, ProductName as Name from productSales order by ID desc limit 20;")
 
 #Read the other table according to a condition of one of the variables.
-dbGetQuery(mydb,"select * from studentAssessment where id_assessment = 1752 limit 10;")
+dbGetQuery(mydb,"select * from productSales where ProductID = 15;")
 ```
 
 ## Getting into SQL - UPDATING
@@ -125,11 +150,11 @@ dbGetQuery(mydb, "SELECT * FROM studentAssessment ORDER BY id_student LIMIT 10;"
 
 #EXERCISE 3
 #Insert a new row in one of your toy data tables leaving one variable empty. Change one value in your other table. Display your new tables. Delete the row you edited and the row you inserted. 
-dbGetQuery(mydb, "insert into studentAssessment (id_assessment, id_student, date_submitted) VALUES ('99999', '666', '20');")
-dbGetQuery(mydb, "SELECT * FROM studentAssessment where id_student=666;")
-dbGetQuery(mydb, "UPDATE studentAssessment SET score = '100' WHERE id_student = 666;")
-dbGetQuery(mydb, "SELECT * FROM studentAssessment where id_student=666;")
-dbGetQuery(mydb, "DELETE FROM studentAssessment WHERE id_student = 666;")
+dbGetQuery(mydb, "insert into productSales (ProductID, ProductName, UnitsSold) VALUES ('9999', 'toy', '200');")
+dbGetQuery(mydb, "SELECT * FROM productSales where ProductID=9999;")
+dbGetQuery(mydb, "UPDATE productSales SET UnitsSold = '500' WHERE ProductID = 9999;")
+dbGetQuery(mydb, "SELECT * FROM productSales where ProductID = 9999;")
+dbGetQuery(mydb, "DELETE FROM productSales WHERE ProductID = 9999;")
 
 ```
 
@@ -151,7 +176,7 @@ dbGetQuery(mydb, "INSERT INTO test VALUES ( 9, 'Frank' );")
 dbGetQuery(mydb, "SELECT * FROM test;")
 
 #Inserting a NULL row
-#dbGetQuery(mydb, "INSERT INTO test DEFAULT VALUES;")
+dbGetQuery(mydb, "INSERT INTO test DEFAULT VALUES;")
 
 dbGetQuery(mydb,"INSERT INTO test (score, student) SELECT score, id_student FROM studentAssessment;")
 
@@ -170,13 +195,29 @@ dbGetQuery(mydb, "SELECT * FROM test WHERE score is NULL;")
 #Delete a table
 dbGetQuery(mydb, "DROP TABLE test;")
 
-dbGetQuery(mydb, "SELECT * FROM test;") #This should produce an error
+dbGetQuery(mydb, "SELECT * FROM test;") #This should produce an error, table has been dropped
 
 #Delete a table if it exists
 dbGetQuery(mydb, "DROP TABLE IF EXISTS test;")
 
 #EXERCISE 4
 #Create a table that is exactly the same as your first toy data table but this time use SQL commands. Display your new table. Then delete the original table. 
+# Create a copy of the table
+
+dbGetQuery(mydb, "CREATE TABLE IF NOT EXISTS EmployeeDetailsCopy (
+  EmployeeID INTEGER, 
+  Department VARCHAR(255), 
+  Salary INTEGER
+);")
+
+# Copy data to the new table
+dbGetQuery(mydb, "INSERT INTO EmployeeDetailsCopy (EmployeeID, Department, Salary) SELECT EmployeeID, Department, Salary FROM employeeDetails;")
+
+# Display the new table
+dbGetQuery(mydb, "SELECT * FROM EmployeeDetailsCopy;")
+
+# Drop the original table
+dbGetQuery(mydb, "DROP TABLE employeeDetails;")
 
 
 ```
@@ -224,6 +265,19 @@ dbGetQuery(mydb,"INSERT INTO test2 (score, student) VALUES (NULL, 'A');")
 #EXERCISE 5
 #Recreate one of your toy data tables with the constraint that for one of the integer variables the default value will be zero. Test your table by inserting some empty values. Display your new tables. Then delete your table.  
 
+dbGetQuery(mydb,"CREATE TABLE employeeDetails (
+  ProductID INTEGER NOT NULL, 
+  ProductName TEXT,
+  UnitsSold INTEGER DEFAULT 0
+  );")
+
+dbGetQuery(mydb,"INSERT INTO employeeDetails (ProductID, ProductName) VALUES (567, 'Disc');")
+
+# UnitsSold set to default value 0
+dbGetQuery(mydb, "Select * from employeeDetails")
+
+dbGetQuery(mydb,"Drop Table employeeDetails;")
+
 ```
 
 
@@ -239,6 +293,9 @@ dbGetQuery(mydb, "ALTER TABLE studentAssessment DROP COLUMN email;")
 
 #EXERCISE 6
 #Add a column to one of your toy data tables with a default value of 3. Display your new table. Delete this column.
+
+dbGetQuery(mydb,"alter table EmployeeDetailsCopy add email integer default 3;")
+dbGetQuery(mydb, "select * from EmployeeDetailsCopy;")
 ```
 
 
@@ -259,6 +316,20 @@ dbGetQuery(mydb, "DROP TABLE IF EXISTS test3;")
 
 #EXERCISE 7
 #Create a new table with four variables and a primary key that is a sequential id value.
+
+dbGetQuery(mydb,"CREATE TABLE newtable (
+  id INTEGER AUTO_INCREMENT PRIMARY KEY, #Not standard syntax
+  score INTEGER, 
+  student TEXT,
+  email TEXT
+  );")
+
+dbGetQuery(mydb,"INSERT INTO newtable (score, student) VALUES (5, 'B');")
+dbGetQuery(mydb,"INSERT INTO newtable (score, student, email) VALUES (5, 'B', 'wh@hw.edu');")
+
+dbGetQuery(mydb, "SELECT * FROM newtable;")
+
+dbGetQuery(mydb, "DROP TABLE IF EXISTS newtable;")
 
 ```
 
@@ -293,6 +364,9 @@ dbGetQuery(mydb, "SELECT id_student, gender, region FROM studentInfo WHERE regio
 
 #EXERCISE 8
 #Query one of your original toy data tables, for two different conditions. 
+dbGetQuery(mydb,"select * from EmployeeDetailsCopy;")
+dbGetQuery(mydb,"select * from EmployeeDetailsCopy where Department like '%Sales%' and Salary > 50000;")
+
 
 ```
 
@@ -304,6 +378,10 @@ dbGetQuery(mydb, "SELECT DISTINCT region, gender FROM studentInfo;")
 
 #EXERCISE 9
 #Insert a duplicate row into one of your toy data tables. Then query the table without including duplicates.
+dbGetQuery(mydb, "Insert into EmployeeDetailsCopy (EmployeeID, Department, Salary, email) VALUES(30, 'Sales', 79217, 3)")
+
+dbGetQuery(mydb,"select distinct EmployeeID, Department, Salary, email from EmployeeDetailsCopy where Department like '%Sales%' and Salary > 50000;")
+
 
 ```
 
@@ -384,16 +462,14 @@ dbGetQuery(mydb, "SELECT * FROM left_table
 #EXERCISE 10
 # Create an a common id variable in your two toy data tables. Then do join those tables so that your query returns all the values from one table and only those that match from the other. 
 
+dbGetQuery(mydb,"select * from EmployeeDetailsCopy;")
+dbGetQuery(mydb,"select * from productSales;")
+
+dbGetQuery(mydb, "select * from EmployeeDetailsCopy e left join productSales p on e.EmployeeID = p.ProductID")
+
+
+
 ```
-# ChatGPT Version
-```{r}
-#Write the SQL code to create two tables called left and right with seven rows of data in two columns, id which is an integer and description which is text. They should have some overlapping values in them. Then right the code to join all the matching rows between the two tables
-
-#EXERCISE 11
-# Ask CHatGPT to write some SQL code and then try to run it on your DB
-```
-
-
 
 # Disconnect your database
 ```{r}
